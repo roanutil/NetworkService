@@ -7,6 +7,9 @@
 // LICENSE file in the root directory of this source tree.
 
 import Foundation
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 extension URLRequest {
     static func build<S>(url: URL, body: Data? = nil, headers: S, method: HTTPMethod) -> Self where S: Sequence,

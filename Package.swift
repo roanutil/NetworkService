@@ -1,155 +1,95 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.7
 
 import PackageDescription
 
+#if os(macOS)
+    let dependencies: [Package.Dependency] = [
+        .combineSchedulers,
+        .ohHttpStubs,
+        .swiftClocks,
+    ]
+    let targets: [Target] = [
+        .target(name: "NetworkService"),
+        .testTarget(
+            name: "NetworkServiceTests",
+            dependencies: [
+                "NetworkService",
+                .ohHttpStubs,
+                .ohHttpStubsSwift,
+            ]
+        ),
+        .target(
+            name: "NetworkServiceTestHelper",
+            dependencies: [
+                "NetworkService",
+                .combineSchedulers,
+                .clocks,
+            ]
+        ),
+        .testTarget(
+            name: "NetworkServiceTestHelperTests",
+            dependencies: [
+                "NetworkServiceTestHelper",
+                .clocks,
+            ]
+        ),
+    ]
+#else
+    let dependencies: [Package.Dependency] = [
+        .combineSchedulers,
+        .swiftClocks,
+    ]
+    let targets: [Target] = [
+        .target(name: "NetworkService"),
+        .target(
+            name: "NetworkServiceTestHelper",
+            dependencies: [
+                "NetworkService",
+                .combineSchedulers,
+                .clocks,
+            ]
+        ),
+    ]
+#endif
+
 let package = Package(
     name: "NetworkService",
-    platforms: [.iOS(.v13), .macOS(.v10_15), .tvOS(.v13), .watchOS(.v6)],
-    products: Product.products,
-    dependencies: Package.Dependency.dependencies,
-    targets: Target.targets
+    platforms: [.iOS(.v13), .macOS(.v10_15), .tvOS(.v13), .watchOS(.v7)],
+    products: [
+        .library(
+            name: "NetworkService",
+            targets: ["NetworkService"]
+        ),
+        .library(
+            name: "NetworkServiceTestHelper",
+            targets: ["NetworkServiceTestHelper"]
+        ),
+    ],
+    dependencies: dependencies,
+    targets: targets
 )
 
-#if swift(>=5.5)
-    extension Product {
-        static let products: [Product] = [
-            .library(
-                name: "NetworkService",
-                targets: ["NetworkService"]
-            ),
-            .library(
-                name: "NetworkServiceTestHelper",
-                targets: ["NetworkServiceTestHelper"]
-            ),
-            .library(
-                name: "NetworkServiceAsyncBeta",
-                targets: ["NetworkServiceAsyncBeta"]
-            ),
-            .library(
-                name: "NetworkServiceTestHelperAsyncBeta",
-                targets: ["NetworkServiceTestHelperAsyncBeta"]
-            ),
-        ]
-    }
+extension Package.Dependency {
+    static let ohHttpStubs: Package.Dependency = .package(
+        url: "https://github.com/AliSoftware/OHHTTPStubs.git",
+        from: "9.1.0"
+    )
+    static let combineSchedulers: Package.Dependency = .package(
+        url: "https://github.com/pointfreeco/combine-schedulers.git",
+        .upToNextMajor(from: "0.6.0")
+    )
 
-    extension Target {
-        static let targets: [Target] = [
-            .target(
-                name: "NetworkService",
-                dependencies: []
-            ),
-            .testTarget(
-                name: "NetworkServiceTests",
-                dependencies: [
-                    "NetworkService",
-                    .product(name: "OHHTTPStubs", package: "OHHTTPStubs"),
-                    .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs"),
-                ]
-            ),
-            .target(name: "NetworkServiceAsyncBeta"),
-            .testTarget(
-                name: "NetworkServiceAsyncBetaTests",
-                dependencies: [
-                    "NetworkServiceAsyncBeta",
-                    .product(name: "OHHTTPStubs", package: "OHHTTPStubs"),
-                    .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs"),
-                ]
-            ),
-            .target(
-                name: "NetworkServiceTestHelper",
-                dependencies: [
-                    "NetworkService",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-            .testTarget(
-                name: "NetworkServiceTestHelperTests",
-                dependencies: [
-                    "NetworkServiceTestHelper",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-            .target(
-                name: "NetworkServiceTestHelperAsyncBeta",
-                dependencies: [
-                    "NetworkServiceAsyncBeta",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-            .testTarget(
-                name: "NetworkServiceTestHelperAsyncBetaTests",
-                dependencies: [
-                    "NetworkServiceTestHelperAsyncBeta",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-        ]
-    }
+    static let swiftClocks: Package.Dependency = .package(
+        url: "https://github.com/pointfreeco/swift-clocks.git",
+        .upToNextMajor(from: "0.2.0")
+    )
+}
 
-    extension Package.Dependency {
-        static let dependencies: [Package.Dependency] = [
-            .package(url: "https://github.com/AliSoftware/OHHTTPStubs.git", from: "9.1.0"),
-            .package(
-                name: "combine-schedulers",
-                url: "https://github.com/pointfreeco/combine-schedulers.git",
-                .upToNextMajor(from: "0.6.0")
-            ),
-        ]
-    }
+extension Target.Dependency {
+    static let ohHttpStubs: Self = .product(name: "OHHTTPStubs", package: "OHHTTPStubs")
+    static let ohHttpStubsSwift: Self = .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs")
 
-#else
-    extension Product {
-        static let products: [Product] = [
-            .library(
-                name: "NetworkService",
-                targets: ["NetworkService"]
-            ),
-            .library(
-                name: "NetworkServiceTestHelper",
-                targets: ["NetworkServiceTestHelper"]
-            ),
-        ]
-    }
+    static let combineSchedulers: Self = .product(name: "CombineSchedulers", package: "combine-schedulers")
 
-    extension Target {
-        static let targets: [Target] = [
-            .target(
-                name: "NetworkService",
-                dependencies: []
-            ),
-            .testTarget(
-                name: "NetworkServiceTests",
-                dependencies: [
-                    "NetworkService",
-                    .product(name: "OHHTTPStubs", package: "OHHTTPStubs"),
-                    .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs"),
-                ]
-            ),
-            .target(
-                name: "NetworkServiceTestHelper",
-                dependencies: [
-                    "NetworkService",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-            .testTarget(
-                name: "NetworkServiceTestHelperTests",
-                dependencies: [
-                    "NetworkServiceTestHelper",
-                    .product(name: "CombineSchedulers", package: "combine-schedulers"),
-                ]
-            ),
-        ]
-    }
-
-    extension Package.Dependency {
-        static let dependencies: [Package.Dependency] = [
-            .package(url: "https://github.com/AliSoftware/OHHTTPStubs.git", from: "9.1.0"),
-            .package(
-                name: "combine-schedulers",
-                url: "https://github.com/pointfreeco/combine-schedulers.git",
-                .upToNextMinor(from: "0.5.3")
-            ),
-        ]
-    }
-#endif
+    static let clocks: Self = .product(name: "Clocks", package: "swift-clocks")
+}

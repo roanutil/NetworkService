@@ -1,5 +1,4 @@
-## Simulator credentials
-*credentials.xcconfig
+*.profraw
 
 # Created by https://www.toptal.com/developers/gitignore/api/xcode,swift,cocoapods,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=xcode,swift,cocoapods,macos

@@ -7,12 +7,23 @@
 // LICENSE file in the root directory of this source tree.
 
 import Foundation
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 extension URLRequest {
     /// Add HTTP header values to a URLRequest with type safety, avoiding the use of raw strings
     /// - Parameter header: The HTTP header to be added
     public mutating func addValue(_ header: HTTPHeader) {
         addValue(header.value, forHTTPHeaderField: header.key)
+    }
+
+    /// Add HTTP header values to a URLRequest with type safety, avoiding the use of raw strings
+    /// - Parameter header: The HTTP header to be added
+    public mutating func addValues<S>(_ headers: S) where S: Sequence, S.Element == HTTPHeader {
+        for header in headers {
+            addValue(header)
+        }
     }
 
     /// Enumeration of all available HTTP ContentTypes

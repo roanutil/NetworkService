@@ -7,6 +7,9 @@
 // LICENSE file in the root directory of this source tree.
 
 import Foundation
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 extension HTTPURLResponse {
     public typealias StatusCode = Int

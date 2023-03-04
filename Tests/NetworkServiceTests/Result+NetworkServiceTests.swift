@@ -8,10 +8,9 @@
 
 import Combine
 import Foundation
-import NetworkServiceAsyncBeta
+import NetworkService
 import XCTest
 
-@available(swift 5.5)
 final class ResultNetworkServiceTests: XCTestCase {
     // MARK: Publisher where Output == URLSession.DataTaskPublisher.Output
 
@@ -90,12 +89,4 @@ final class ResultNetworkServiceTests: XCTestCase {
         }
         XCTAssertEqual(error, NetworkService.Failure.urlResponse(response))
     }
-
-    static var allTests = [
-        ("testInvalidInput", testInvalidInput),
-        ("testUnsuccessfulInput", testUnsuccessfulInput),
-        ("testSuccessfulInput", testSuccessfulInput),
-        ("testUnknownNSError", testUnknownNSError),
-        ("testNetworkServiceFailure", testNetworkServiceFailure),
-    ]
 }

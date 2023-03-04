@@ -6,99 +6,62 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-import Combine
-import Foundation
-import NetworkService
-import OHHTTPStubs
-import OHHTTPStubsSwift
-import XCTest
+#if !os(watchOS)
+    import Combine
+    import Foundation
+    import NetworkService
+    import OHHTTPStubs
+    import OHHTTPStubsSwift
+    import XCTest
 
-extension NetworkServiceTests {
-    // MARK: Success
+    extension NetworkServiceTests {
+        // MARK: Success
 
-    func testPostSuccess() throws {
-        let url = try destinationURL()
-        let data = (try? responseBodyEncoded()) ?? Data()
-        stub(
-            condition: isHost(host)
-                && isPath(path)
-                && isMethodPOST()
-                && hasBody(data)
-        ) { _ in
-            HTTPStubsResponse(
-                data: data,
-                statusCode: Int32(HTTPURLResponse.StatusCode.ok),
-                headers: [URLRequest.ContentType.key: URLRequest.ContentType.applicationJSON.value]
-            )
+        func testPostSuccess() async throws {
+            let url = try destinationURL()
+            let data = (try? responseBodyEncoded()) ?? Data()
+            stub(
+                condition: isHost(host)
+                    && isPath(path)
+                    && isMethodPOST()
+                    && hasBody(data)
+            ) { _ in
+                HTTPStubsResponse(
+                    data: data,
+                    statusCode: Int32(HTTPURLResponse.StatusCode.ok),
+                    headers: [URLRequest.ContentType.key: URLRequest.ContentType.applicationJSON.value]
+                )
+            }
+
+            let service = NetworkService()
+            let result: Result<Lyric, Failure> = await service.post(data, to: url)
+            XCTAssertEqual(try result.get(), Lyric.test)
         }
 
-        let successfulResponse = expectation(description: "Receive a successful response")
-        let finished = expectation(description: "Publisher finished")
+        // MARK: Failure
 
-        let service = NetworkService()
-        let publisher: AnyPublisher<Lyric, Failure> = service.post(data, to: url)
-        publisher.receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case let .failure(error):
-                        XCTFail("Unexpected failure: \(error)")
-                    case .finished:
-                        finished.fulfill()
-                    }
-                },
-                receiveValue: { value in
-                    assert(value == Lyric.test, "Response body equals expected value")
-                    successfulResponse.fulfill()
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [successfulResponse, finished])
-    }
+        func testPostFailure() async throws {
+            let data = (try? responseBodyEncoded()) ?? Data()
+            stub(
+                condition: isHost(host)
+                    && isPath(path)
+                    && isMethodPOST()
+                    && hasBody(data)
+            ) { _ in
+                HTTPStubsResponse(
+                    data: data,
+                    statusCode: Int32(HTTPURLResponse.StatusCode.badRequest),
+                    headers: [URLRequest.ContentType.key: URLRequest.ContentType.applicationJSON.value]
+                )
+            }
 
-    // MARK: Failure
-
-    func testPostFailure() throws {
-        let data = (try? responseBodyEncoded()) ?? Data()
-        stub(
-            condition: isHost(host)
-                && isPath(path)
-                && isMethodPOST()
-                && hasBody(data)
-        ) { _ in
-            HTTPStubsResponse(
-                data: data,
-                statusCode: Int32(HTTPURLResponse.StatusCode.badRequest),
-                headers: [URLRequest.ContentType.key: URLRequest.ContentType.applicationJSON.value]
-            )
+            let service = NetworkService()
+            let url = try destinationURL()
+            let result: Result<Lyric, Failure> = await service.post(data, to: url)
+            guard case let .failure(.httpResponse(response)) = result else {
+                return XCTFail("Expecting failure but received success.")
+            }
+            XCTAssert(response.isClientError)
         }
-
-        let errorResponse = expectation(description: "Responded with error as expected")
-
-        let service = NetworkService()
-        let url = try destinationURL()
-        let publisher: AnyPublisher<Lyric, Failure> = service.post(data, to: url)
-        publisher.receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { completion in
-                    switch completion {
-                    case let .failure(error):
-                        switch error {
-                        case let .http(response):
-                            assert(response.isClientError)
-                            errorResponse.fulfill()
-                        default:
-                            XCTFail("Wrong error type when expecting a client failure: \(error)")
-                        }
-                    case .finished:
-                        XCTFail("Unexpected successful finish")
-                    }
-                },
-                receiveValue: { _ in
-                    XCTFail("Unexpected successful response")
-                }
-            )
-            .store(in: &cancellables)
-        wait(for: [errorResponse])
     }
-}
+#endif
