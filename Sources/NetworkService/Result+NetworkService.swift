@@ -1,25 +1,22 @@
 // Result+NetworkService.swift
 // NetworkService
 //
-// Copyright © 2023 MFB Technologies, Inc. All rights reserved.
+// Copyright © 2024 MFB Technologies, Inc. All rights reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
 import Foundation
+import HTTPTypes
 
-extension Result where Success == (Data, URLResponse), Failure == Error {
-    /// Casts and unwraps a `URLSession.DataTaskPublisher.Output` while ensuring the
-    /// response code indicates success.
+extension Result where Success == (Data, HTTPResponse), Failure == any Error {
+    /// Checks if the response status is successful and fails if not
     /// - Returns:
-    ///     - `Publishers.TryMap<Self, Data>`
+    ///     - `Result<Data, NetworkService.Failure>`
     public func httpMap() -> Result<Data, NetworkService.Failure> {
         flatMap { data, response in
-            guard let httpResponse = response as? HTTPURLResponse else {
-                return .failure(NetworkService.Failure.urlResponse(response))
-            }
-            guard httpResponse.isSuccessful else {
-                return .failure(NetworkService.Failure.httpResponse(httpResponse))
+            guard response.status.kind == .successful else {
+                return .failure(NetworkService.Failure.httpResponse(response))
             }
             return .success(data)
         }
@@ -30,15 +27,15 @@ extension Result where Success == (Data, URLResponse), Failure == Error {
 extension Result {
     /// Convenience method for mapping errors to `NetworkService.Failure`
     /// - Returns:
-    ///     - `Publishers.MapError<Self, NetworkService.Failure>`
+    ///     - `Result<Success, NetworkService.Failure>`
     public func mapToNetworkError() -> Result<Success, NetworkService.Failure> {
         mapError { error in
             if let urlError = error as? URLError {
-                return .urlError(urlError)
+                .urlError(urlError)
             } else if let failure = error as? NetworkService.Failure {
-                return failure
+                failure
             } else {
-                return .unknown(error as NSError)
+                .unknown(error as NSError)
             }
         }
     }
@@ -48,18 +45,18 @@ extension Result {
     import Combine
 
     extension Result {
-        func decode<T: Decodable, Decoder: TopLevelDecoder>(with decoder: Decoder) -> Result<T, Error>
+        func decode<T: Decodable, Decoder: TopLevelDecoder>(with decoder: Decoder) -> Result<T, any Error>
             where Decoder.Input == Success
         {
-            mapError { $0 as Error }
+            mapError { $0 as any Error }
                 .flatMap { input in
-                    Result<T, Error> {
+                    Result<T, any Error> {
                         try decoder.decode(T.self, from: input)
                     }
                 }
         }
 
-        func decode<T: TopLevelDecodable>() -> Result<T, Error> where T.AdoptedDecoder.Input == Success {
+        func decode<T: TopLevelDecodable>() -> Result<T, any Error> where T.AdoptedDecoder.Input == Success {
             decode(with: T.decoder)
         }
     }

@@ -1,7 +1,7 @@
 // NetworkServiceTests.swift
 // NetworkService
 //
-// Copyright © 2023 MFB Technologies, Inc. All rights reserved.
+// Copyright © 2024 MFB Technologies, Inc. All rights reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
@@ -41,19 +41,12 @@
         let host = "rick.astley.com"
         let path = "/never/gonna/give/you/up"
 
-        func destinationURL() throws -> URL {
-            try XCTUnwrap(URL(string: path, relativeTo: URL(string: prefix + host)))
+        func destinationURLString() -> String {
+            prefix + host + path
         }
 
-        static var allTests = [
-            ("testDeleteSuccess", testDeleteSuccess),
-            ("testDeleteFailure", testDeleteFailure),
-            ("testGetSuccess", testGetSuccess),
-            ("testGetFailure", testGetFailure),
-            ("testPostSuccess", testPostSuccess),
-            ("testPostFailure", testPostFailure),
-            ("testPutSuccess", testPutSuccess),
-            ("testPutFailure", testPutFailure),
-        ]
+        func destinationURL() throws -> URL {
+            try XCTUnwrap(URL(string: destinationURLString()))
+        }
     }
 #endif

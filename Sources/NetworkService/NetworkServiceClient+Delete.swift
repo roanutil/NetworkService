@@ -1,12 +1,13 @@
 // NetworkServiceClient+Delete.swift
 // NetworkService
 //
-// Copyright © 2023 MFB Technologies, Inc. All rights reserved.
+// Copyright © 2024 MFB Technologies, Inc. All rights reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
 import Foundation
+import HTTPTypes
 
 extension NetworkServiceClient {
     // MARK: DELETE
@@ -14,13 +15,13 @@ extension NetworkServiceClient {
     /// - Parameters:
     ///   - url: The destination for the request
     ///   - headers: HTTP headers for the request
-    /// - Returns: Type erased publisher with `Data` output and `NetworkService`'s error domain for failure
+    /// - Returns: `Result` with `Data` output and `NetworkService`'s error domain for failure
     public func delete(
         _ url: URL,
-        headers: [HTTPHeader] = []
+        headers: HTTPFields = HTTPFields()
     ) async -> Result<Data, Failure> {
-        let request = URLRequest.build(url: url, headers: headers, method: .DELETE)
-        return await start(request)
+        let request = HTTPRequest(method: .delete, url: url, headerFields: headers)
+        return await start(request, body: nil)
     }
 }
 
@@ -33,10 +34,10 @@ extension NetworkServiceClient {
         ///   - url: The destination for the request
         ///   - headers: HTTP headers for the request
         ///   - decoder: `TopLevelDecoder` for decoding the response body
-        /// - Returns: Type erased publisher with decoded output and `NetworkService`'s error domain for failure
+        /// - Returns: `Result` with decoded output and `NetworkService`'s error domain for failure
         public func delete<ResponseBody, Decoder>(
             _ url: URL,
-            headers: [HTTPHeader] = [],
+            headers: HTTPFields = HTTPFields(),
             decoder: Decoder
         ) async -> Result<ResponseBody, Failure>
             where ResponseBody: Decodable, Decoder: TopLevelDecoder, Decoder.Input == Data
@@ -50,9 +51,10 @@ extension NetworkServiceClient {
         /// - Parameters:
         ///     - url: The destination for the request
         ///     - headers: HTTP headers for the request
-        /// - Returns: Type erased publisher with `TopLevelDecodable` output and `NetworkService`'s error domain for
+        /// - Returns: `Result` with `TopLevelDecodable` output and `NetworkService`'s error domain for
         /// failure
-        public func delete<ResponseBody>(_ url: URL, headers: [HTTPHeader] = []) async -> Result<ResponseBody, Failure>
+        public func delete<ResponseBody>(_ url: URL,
+                                         headers: HTTPFields = HTTPFields()) async -> Result<ResponseBody, Failure>
             where ResponseBody: TopLevelDecodable
         {
             await delete(url, headers: headers, decoder: ResponseBody.decoder)
